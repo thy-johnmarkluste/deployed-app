@@ -1,7 +1,21 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
-from PyInstaller.utils.hooks import collect_submodules
+
+
+def _local_modules(package_dir):
+    modules = []
+    if not os.path.isdir(package_dir):
+        return modules
+    for root, _, files in os.walk(package_dir):
+        for filename in files:
+            if not filename.endswith('.py') or filename == '__init__.py':
+                continue
+            full_path = os.path.join(root, filename)
+            rel_path = os.path.relpath(full_path, '.')
+            module_name = rel_path[:-3].replace('\\', '.').replace('/', '.')
+            modules.append(module_name)
+    return modules
 
 
 block_cipher = None
@@ -13,16 +27,12 @@ datas = [
 if os.path.exists('.env'):
     datas.append(('.env', '.'))
 
-hiddenimports = (
-    collect_submodules('controllers')
-    + collect_submodules('models')
-    + collect_submodules('views')
-)
+hiddenimports = _local_modules('controllers') + _local_modules('models') + _local_modules('views')
 
 
 a = Analysis(
     ['app.py'],
-    pathex=[],
+    pathex=[os.path.abspath('.')],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
