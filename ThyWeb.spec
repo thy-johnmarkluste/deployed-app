@@ -1,11 +1,22 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
+
+datas = []
+
+if os.path.exists('assets'):
+    datas.append(('assets', 'assets'))
+
+if os.path.exists('.env'):
+    datas.append(('.env', '.'))
+
 
 a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[('.env', '.')],
+    datas=datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
