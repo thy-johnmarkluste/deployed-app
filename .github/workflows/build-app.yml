@@ -1,0 +1,123 @@
+name: Build Desktop App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller (Windows)
+        shell: pwsh
+        run: |
+          if (Test-Path "ThyWeb.spec") {
+            pyinstaller --noconfirm --clean ThyWeb.spec
+          } else {
+            throw "ThyWeb.spec not found."
+          }
+
+      - name: Build optional setup executable spec
+        shell: pwsh
+        run: |
+          if (Test-Path "ThyWebSetup.spec") {
+            pyinstaller --noconfirm --clean ThyWebSetup.spec
+          } else {
+            Write-Host "ThyWebSetup.spec not found. Skipping."
+          }
+
+      - name: Build optional ServerAppConfig spec
+        shell: pwsh
+        run: |
+          if (Test-Path "ServerAppConfig.spec") {
+            pyinstaller --noconfirm --clean ServerAppConfig.spec
+          } else {
+            Write-Host "ServerAppConfig.spec not found. Skipping."
+          }
+
+      - name: Build optional Inno Setup installer
+        shell: pwsh
+        run: |
+          if (Test-Path "ThyWebInstaller.iss") {
+            choco install innosetup -y
+            & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "ThyWebInstaller.iss"
+          } else {
+            Write-Host "ThyWebInstaller.iss not found. Skipping installer build."
+          }
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          if-no-files-found: warn
+          path: |
+            dist/**
+            Output/**
+
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build app for macOS
+        shell: bash
+        run: |
+          if [ -f "build_macos.sh" ]; then
+            chmod +x build_macos.sh
+            ./build_macos.sh
+          elif [ -f "ThyWeb.macos.spec" ]; then
+            pyinstaller --noconfirm --clean ThyWeb.macos.spec
+          else
+            echo "No macOS build script or spec found."
+            exit 1
+          fi
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          if-no-files-found: warn
+          path: |
+            dist/ThyWeb.app
+            dist/*.dmg
+            dist/*.pkg

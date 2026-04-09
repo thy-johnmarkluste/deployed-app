@@ -1,0 +1,18 @@
+[
+  {
+    "hash": "—",
+    "date": "2026-03-11 17:11",
+    "author": "App",
+    "action": "connect",
+    "message": "Connected testprojectwp.veryapp.info to https://github.com/LusteJohn/test_wp.git",
+    "subdomain": "testprojectwp.veryapp.info"
+  },
+  {
+    "hash": "—",
+    "date": "2026-03-10 15:06",
+    "author": "App",
+    "action": "connect",
+    "message": "Connected testprojectwp.veryapp.info to https://github.com/LusteJohn/test_repo_wp.git",
+    "subdomain": "testprojectwp.veryapp.info"
+  }
+]
