@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
+from PyInstaller.utils.hooks import collect_submodules
 
 
 datas = []
@@ -11,13 +12,19 @@ if os.path.exists('assets'):
 if os.path.exists('.env'):
     datas.append(('.env', '.'))
 
+hiddenimports = (
+    collect_submodules('controllers')
+    + collect_submodules('models')
+    + collect_submodules('views')
+)
+
 
 a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=[],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
