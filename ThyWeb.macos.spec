@@ -24,6 +24,10 @@ datas = [
     ('assets', 'assets'),
 ]
 
+for folder in ('controllers', 'models', 'views'):
+    if os.path.isdir(folder):
+        datas.append((folder, folder))
+
 if os.path.exists('.env'):
     datas.append(('.env', '.'))
 
