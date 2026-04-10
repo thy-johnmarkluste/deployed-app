@@ -695,15 +695,33 @@ def _launch_main_application():
     try:
         if getattr(sys, "frozen", False):
             setup_exe = Path(sys.executable).resolve()
-            candidates = [
-                setup_exe.with_name("ThyWeb.exe"),
-                setup_exe.parent.parent / "ThyWeb" / "ThyWeb.exe",
-                setup_exe.parent / "ThyWeb.exe",
-            ]
-            main_exe = next((p for p in candidates if p.exists()), None)
-            if not main_exe:
-                raise FileNotFoundError("Could not find ThyWeb.exe near setup executable.")
-            subprocess.Popen([str(main_exe)])
+            if sys.platform == "darwin":
+                app_bundle = None
+                for parent in setup_exe.parents:
+                    if parent.suffix == ".app":
+                        app_bundle = parent
+                        break
+
+                if app_bundle is None:
+                    raise FileNotFoundError("Could not resolve setup .app bundle location.")
+
+                candidates = [
+                    app_bundle.with_name("ThyWeb.app"),
+                ]
+                main_app = next((p for p in candidates if p.exists()), None)
+                if not main_app:
+                    raise FileNotFoundError("Could not find ThyWeb.app near setup app.")
+                subprocess.Popen(["open", str(main_app)])
+            else:
+                candidates = [
+                    setup_exe.with_name("ThyWeb.exe"),
+                    setup_exe.parent.parent / "ThyWeb" / "ThyWeb.exe",
+                    setup_exe.parent / "ThyWeb.exe",
+                ]
+                main_exe = next((p for p in candidates if p.exists()), None)
+                if not main_exe:
+                    raise FileNotFoundError("Could not find ThyWeb.exe near setup executable.")
+                subprocess.Popen([str(main_exe)])
         else:
             subprocess.Popen([sys.executable, "app.py"])
 

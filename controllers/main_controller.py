@@ -69,8 +69,11 @@ class MainController(
 
         if not self.hostname or not self.username:
             # Launch setup silently first, then exit
-            self._launch_setup_application()
-            sys.exit(0)
+            launched = self._launch_setup_application()
+            if launched:
+                self.root.after(100, self.root.destroy)
+                return
+            raise RuntimeError("Missing credentials and failed to launch setup application.")
 
 
         self.ssh = SSHClientManager(self.hostname, self.username, self.password)
@@ -355,19 +358,42 @@ class MainController(
         try:
             if getattr(sys, "frozen", False):
                 main_exe = Path(sys.executable).resolve()
-                candidates = [
-                    main_exe.with_name("ThyWebSetup.exe"),
-                    main_exe.parent.parent / "ThyWebSetup" / "ThyWebSetup.exe",
-                    main_exe.parent / "ThyWebSetup.exe",
-                ]
-                setup_exe = next((p for p in candidates if p.exists()), None)
-                if not setup_exe:
-                    raise FileNotFoundError("Could not find ThyWebSetup.exe near installed app.")
-                subprocess.Popen([str(setup_exe)])
+                if sys.platform == "darwin":
+                    # Expected inside app bundle:
+                    # ThyWeb.app/Contents/MacOS/ThyWeb
+                    app_bundle = None
+                    for parent in main_exe.parents:
+                        if parent.suffix == ".app":
+                            app_bundle = parent
+                            break
+
+                    if app_bundle is None:
+                        raise FileNotFoundError("Could not resolve current .app bundle location.")
+
+                    candidates = [
+                        app_bundle.with_name("ThyWebSetup.app"),
+                        app_bundle.with_name("ServerAppConfig.app"),
+                    ]
+                    setup_app = next((p for p in candidates if p.exists()), None)
+                    if not setup_app:
+                        raise FileNotFoundError("Could not find ThyWebSetup.app near installed app.")
+                    subprocess.Popen(["open", str(setup_app)])
+                else:
+                    candidates = [
+                        main_exe.with_name("ThyWebSetup.exe"),
+                        main_exe.parent.parent / "ThyWebSetup" / "ThyWebSetup.exe",
+                        main_exe.parent / "ThyWebSetup.exe",
+                    ]
+                    setup_exe = next((p for p in candidates if p.exists()), None)
+                    if not setup_exe:
+                        raise FileNotFoundError("Could not find ThyWebSetup.exe near installed app.")
+                    subprocess.Popen([str(setup_exe)])
             else:
                 subprocess.Popen([sys.executable, "setup_credentials.py"])
+            return True
         except Exception as exc:
             messagebox.showerror(
                 "Launch Failed",
                 f"Could not open setup credentials window:\n{exc}",
             )
+            return False
