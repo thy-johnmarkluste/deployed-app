@@ -119,5 +119,6 @@ jobs:
           if-no-files-found: warn
           path: |
             dist/ThyWeb.app
+            dist/ThyWebSetup.app
             dist/*.dmg
             dist/*.pkg
